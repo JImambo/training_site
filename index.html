@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PEPCI — Un modèle d'enseignement</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#16233F;
+    --navy-deep:#0E1830;
+    --navy-soft:#233457;
+    --gold:#C79A3C;
+    --gold-soft:#E7CB86;
+    --gold-text:#8A6318;
+    --paper:#F7F7F5;
+    --card:#FFFFFF;
+    --line:#E4E3DE;
+    --ink:#23262F;
+    --muted:#666A75;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion: reduce){ html{scroll-behavior:auto;} *{animation:none !important; transition:none !important;} }
+
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:'Work Sans', sans-serif;
+    line-height:1.6;
+  }
+  h1,h2,h3,.serif{ font-family:'Fraunces', serif; }
+
+  a{color:inherit;}
+
+  /* ---------- progress + top bar ---------- */
+  #progress{
+    position:fixed; top:0; left:0; height:3px; width:0%;
+    background:var(--gold); z-index:60; transition:width .1s linear;
+  }
+  header.topbar{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 28px 10px;
+    background:rgba(247,247,245,.86);-webkit-backdrop-filter: blur(8px); backdrop-filter:blur(8px);
+    border-bottom:1px solid var(--line);
+  }
+  .brandmark{ display:flex; align-items:center; gap:8px; font-family:'Fraunces',serif; font-weight:700; color:var(--navy); font-size:15px; letter-spacing:.02em; }
+  .brandmark .dot{ width:8px; height:8px; border-radius:50%; background:var(--gold); }
+  #chapterLabel{ font-size:13px; color:var(--muted); font-weight:500; }
+  #tocBtn{
+    border:1px solid var(--navy); background:transparent; color:var(--navy);
+    font-family:'Work Sans',sans-serif; font-size:13px; font-weight:600;
+    padding:8px 16px; border-radius:100px; cursor:pointer;
+    transition:background .15s ease, color .15s ease;
+  }
+  #tocBtn:hover{ background:var(--navy); color:#fff; }
+
+  /* ---------- table of contents overlay ---------- */
+  #toc{
+    position:fixed; inset:0; background:var(--navy-deep); z-index:80;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; pointer-events:none; transition:opacity .25s ease;
+  }
+  #toc.open{ opacity:1; pointer-events:auto; }
+  #toc .tocInner{ width:min(560px, 88vw); }
+  #toc h2{ color:var(--gold); font-size:14px; letter-spacing:.08em; margin:0 0 22px; font-weight:600; font-family:'Work Sans',sans-serif; }
+  #toc ol{ list-style:none; margin:0; padding:0; counter-reset:toc; }
+  #toc li{ counter-increment:toc; border-bottom:1px solid rgba(255,255,255,.12); }
+  #toc a{
+    display:flex; align-items:baseline; gap:16px; padding:14px 2px;
+    text-decoration:none; color:#EDEFF5; font-family:'Fraunces',serif; font-size:22px;
+    transition:color .15s ease, padding-left .15s ease;
+  }
+  #toc a::before{ content: counter(toc, decimal-leading-zero); color:var(--gold); font-family:'Work Sans',sans-serif; font-size:13px; }
+  #toc a:hover{ color:var(--gold); padding-left:10px; }
+  #tocClose{
+    position:absolute; top:26px; right:32px; background:none; border:none; color:#fff;
+    font-size:28px; cursor:pointer; line-height:1;
+  }
+
+  section{ padding:110px 8vw 90px; }
+  .wrap{ max-width:760px; margin:0 auto; }
+  .wrap.wide{ max-width:980px; }
+
+  /* ---------- hero ---------- */
+  #hero{
+    background:var(--navy); color:#fff; padding-top:160px; padding-bottom:120px;
+    position:relative; overflow:hidden;
+  }
+  #hero .wrap{ max-width:760px; text-align:left; }
+  .marks{ display:flex; gap:10px; margin-bottom:34px; }
+  .marks span{
+    width:38px; height:38px; border-radius:50%; border:1.5px solid var(--gold);
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces',serif; font-weight:700; color:var(--gold); font-size:15px;
+    opacity:0; transform:translateY(10px);
+    animation:rise .5s ease forwards;
+  }
+  .marks span:nth-child(1){animation-delay:.05s;}
+  .marks span:nth-child(2){animation-delay:.15s;}
+  .marks span:nth-child(3){animation-delay:.25s;}
+  .marks span:nth-child(4){animation-delay:.35s;}
+  .marks span:nth-child(5){animation-delay:.45s;}
+  @keyframes rise{ to{opacity:1; transform:translateY(0);} }
+
+  #hero h1{
+    font-size:clamp(52px,9vw,88px); font-weight:700; margin:0 0 18px; line-height:.95;
+    opacity:0; transform:translateY(14px); animation:rise .6s ease forwards; animation-delay:.5s;
+  }
+  #hero p.lede{
+    font-size:19px; color:var(--gold-soft); font-style:italic; max-width:480px; margin:0 0 46px;
+    opacity:0; transform:translateY(14px); animation:rise .6s ease forwards; animation-delay:.65s;
+  }
+  #hero .meta{
+    display:grid; grid-template-columns:repeat(3,minmax(140px,1fr)); gap:20px; max-width:620px;
+    border-top:1px solid rgba(255,255,255,.16); padding-top:24px;
+    opacity:0; transform:translateY(14px); animation:rise .6s ease forwards; animation-delay:.8s;
+  }
+  @media (max-width:560px){ #hero .meta{ grid-template-columns:1fr; } }
+  #hero .meta div{ font-size:13px; color:#9AA3BA; }
+  #hero .meta strong{ display:block; color:#fff; font-size:14px; font-weight:600; margin-bottom:3px; }
+
+  /* ---------- generic section heading ---------- */
+  .kicker{ font-size:13px; color:var(--gold-text); font-weight:600; margin:0 0 10px; }
+  h2.title{ font-size:clamp(28px,4vw,38px); margin:0 0 8px; color:var(--navy); font-weight:700; }
+  .rule{ width:46px; height:3px; background:var(--gold); margin:18px 0 36px; border:none; }
+
+  /* ---------- objectifs / list rows ---------- */
+  .row{ display:flex; gap:22px; padding:22px 0; border-top:1px solid var(--line); }
+  .row:last-child{ border-bottom:1px solid var(--line); }
+  .row .num{
+    flex:none; width:34px; height:34px; border-radius:50%; background:var(--navy);
+    color:var(--gold); font-family:'Fraunces',serif; font-weight:700; font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .row .txt strong{ display:block; font-size:16.5px; color:var(--navy); margin-bottom:4px; font-weight:600; }
+  .row .txt p{ margin:0; color:var(--muted); font-size:15.5px; }
+
+  /* ---------- commission cards ---------- */
+  .cards2{ display:grid; grid-template-columns:1fr 1fr; gap:22px; margin-top:8px; align-items:start; }
+  @media (max-width:640px){ .cards2{grid-template-columns:1fr;} }
+  .cardnavy{ background:var(--navy); color:#fff; border-radius:6px; padding:30px 26px; cursor:pointer; transition:background .15s ease; }
+  .cardnavy:hover{ background:#1C2C4E; }
+  .cardnavy:focus-visible{ outline:2px solid var(--gold); outline-offset:2px; }
+  .cardnavy .cardTop{ display:flex; justify-content:space-between; align-items:flex-start; }
+  .cardnavy .big{ font-family:'Fraunces',serif; font-size:38px; color:var(--navy-soft); font-weight:700; margin:0 0 20px; }
+  .cardnavy .toggleIcon{
+    width:30px; height:30px; border-radius:50%; border:1px solid rgba(255,255,255,.3);
+    display:flex; align-items:center; justify-content:center; font-size:16px; color:var(--gold);
+    transition:transform .3s ease; flex:none;
+  }
+  .cardnavy.open .toggleIcon{ transform:rotate(45deg); }
+  .cardnavy h3{ font-family:'Fraunces',serif; color:var(--gold); font-size:19px; margin:0 0 10px; }
+  .cardnavy p{ margin:0; font-size:15px; color:#DDE1EC; }
+  .cardnavy .hint{ margin-top:18px; font-size:12.5px; color:#8A93AC; font-weight:600; }
+  .cardnavy .explainWrap{ max-height:0; overflow:hidden; transition:max-height .4s ease; }
+  .cardnavy.open .explainWrap{ max-height:900px; }
+  .cardExplain{ margin-top:24px; padding-top:22px; border-top:1px solid rgba(255,255,255,.15); }
+  .cardExplain h4{ margin:0 0 10px; font-size:13px; color:var(--gold); font-family:'Work Sans',sans-serif; font-weight:700; }
+  .cardExplain p{ font-size:14.5px; color:#DDE1EC; margin:0 0 14px; }
+  .cardExplain ul{ list-style:none; margin:0 0 6px; padding:0; }
+  .cardExplain li{ position:relative; padding-left:22px; font-size:14.5px; color:#DDE1EC; margin-bottom:9px; }
+  .cardExplain li::before{ content:'\2192'; position:absolute; left:0; color:var(--gold); }
+  .refline{ text-align:center; font-style:italic; color:var(--gold-text); font-size:13.5px; margin-top:26px; }
+
+  /* ---------- pull quotes (slide 5) ---------- */
+  .pullquote{ display:flex; gap:18px; padding:26px 0; }
+  .pullquote .q{ font-family:'Fraunces',serif; font-size:44px; color:var(--gold); line-height:1; }
+  .pullquote p{ font-family:'Fraunces',serif; font-size:23px; font-style:italic; color:var(--navy); margin:6px 0 0; }
+
+  /* ---------- pepci overview chapter divider ---------- */
+  #pepci-overview{ background:var(--navy); color:#fff; text-align:left; }
+  #pepci-overview .kicker{ color:var(--gold); }
+  #pepci-overview h2.title{ color:#fff; }
+  .letterGrid{ display:flex; gap:22px; flex-wrap:wrap; margin-top:44px; }
+  .letterCard{
+    flex:1 1 150px; text-decoration:none; text-align:center; padding:26px 10px;
+    border:1px solid rgba(255,255,255,.15); border-radius:6px;
+    transition:border-color .15s ease, transform .15s ease;
+  }
+  .letterCard:hover{ border-color:var(--gold); transform:translateY(-3px); }
+  .letterCard .circ{
+    width:64px; height:64px; border-radius:50%; background:var(--gold); color:var(--navy);
+    font-family:'Fraunces',serif; font-weight:700; font-size:26px;
+    display:flex; align-items:center; justify-content:center; margin:0 auto 14px;
+  }
+  .letterCard span{ font-size:13.5px; font-weight:600; color:#D7DCE8; }
+
+  /* ---------- detail sections (5 lettres) ---------- */
+  .detail{ display:grid; grid-template-columns:230px 1fr; gap:52px; align-items:start; }
+  @media (max-width:700px){ .detail{grid-template-columns:1fr;} }
+  .medallion{ text-align:center; position:sticky; top:120px; }
+  .medallion .circ{
+    width:150px; height:150px; border-radius:50%; background:var(--navy); color:var(--gold);
+    font-family:'Fraunces',serif; font-weight:700; font-size:64px;
+    display:flex; align-items:center; justify-content:center; margin:0 auto 18px;
+  }
+  .medallion strong{ font-family:'Fraunces',serif; font-size:20px; color:var(--navy); }
+  .detail .body p{ font-size:17px; margin:0 0 22px; }
+  .detail .body .emph{
+    font-family:'Fraunces',serif; font-style:italic; font-weight:600; font-size:19px; color:var(--gold-text);
+    margin-bottom:28px;
+  }
+  .tips{ background:var(--card); border:1px solid var(--line); border-radius:8px; padding:22px 24px; margin-bottom:20px; }
+  .tips h4{ margin:0 0 14px; font-size:13px; font-weight:700; color:var(--navy); font-family:'Work Sans',sans-serif; }
+  .tips ul{ list-style:none; margin:0; padding:0; }
+  .tips li{ position:relative; padding-left:24px; font-size:15px; color:var(--ink); margin-bottom:10px; }
+  .tips li:last-child{ margin-bottom:0; }
+  .tips li::before{ content:'\2713'; position:absolute; left:0; top:1px; color:var(--gold); font-weight:700; font-size:13px; }
+  .refs{ display:flex; flex-wrap:wrap; gap:8px; }
+  .ref-pill{
+    display:inline-block; font-size:12.5px; font-weight:600; color:var(--gold-text);
+    border:1px solid var(--gold-soft); background:#FBF6EA; padding:5px 12px; border-radius:100px;
+    cursor:pointer; font-family:'Work Sans',sans-serif; transition:background .15s ease, color .15s ease;
+  }
+  .ref-pill:hover{ background:var(--gold-soft); }
+  .ref-pill.active{ background:var(--navy); border-color:var(--navy); color:#fff; }
+  .verse-explain{
+    max-height:0; overflow:hidden; transition:max-height .35s ease;
+    margin-top:0;
+  }
+  .verse-explain.open{ max-height:400px; margin-top:14px; }
+  .verse-explain .inner{
+    background:var(--card); border-left:3px solid var(--gold); border-radius:0 8px 8px 0;
+    padding:16px 20px;
+  }
+  .verse-explain .vref{ font-family:'Fraunces',serif; font-weight:700; color:var(--navy); font-size:15px; margin:0 0 8px; }
+  .verse-explain .vtext{ font-size:14px; color:var(--ink); margin:0 0 8px; line-height:1.55; }
+  .verse-explain .vtext b{ color:var(--navy); font-weight:600; }
+  .cardExplain .verse-explain .inner{ background:rgba(255,255,255,.07); }
+  .cardExplain .verse-explain .vref{ color:var(--gold); }
+  .cardExplain .verse-explain .vtext{ color:#E7E9F1; }
+  .cardExplain .verse-explain .vtext b{ color:#fff; }
+
+  /* ---------- verset ---------- */
+  #verset{ background:var(--navy); color:#fff; text-align:left; }
+  #verset .q{ font-family:'Fraunces',serif; font-size:90px; color:var(--navy-soft); line-height:.6; display:block; margin-bottom:10px; }
+  #verset p.v{ font-family:'Fraunces',serif; font-size:clamp(26px,4vw,38px); font-style:italic; font-weight:600; color:#fff; max-width:680px; margin:0 0 22px; }
+  #verset .ref{ color:var(--gold); font-weight:600; font-size:15px; }
+
+  /* ---------- quiz ---------- */
+  #quiz{ background:var(--paper); }
+  .qcard{
+    background:var(--card); border:1px solid var(--line); border-radius:8px; padding:26px 28px; margin-bottom:18px;
+  }
+  .qcard .qhead{ display:flex; gap:14px; align-items:baseline; margin-bottom:16px; }
+  .qcard .qnum{ font-family:'Fraunces',serif; color:var(--gold-text); font-weight:700; font-size:15px; }
+  .qcard .qtext{ font-weight:600; font-size:16.5px; color:var(--navy); }
+  .opt{
+    display:flex; align-items:flex-start; gap:12px; padding:11px 14px; border:1px solid var(--line); border-radius:6px;
+    margin-bottom:9px; cursor:pointer; transition:border-color .15s ease, background .15s ease;
+    font-size:15px;
+  }
+  .opt:hover{ border-color:var(--gold); }
+  .opt input{ margin-top:3px; accent-color:var(--navy); }
+  .opt.correct{ border-color:#3E8A5A; background:#F1F8F3; }
+  .opt.wrong{ border-color:#C0503F; background:#FBF1EF; }
+  .feedback{ font-size:14px; margin-top:8px; padding:10px 12px; border-radius:5px; display:none; }
+  .feedback.show{ display:block; }
+  .feedback.ok{ background:#F1F8F3; color:#2E6844; }
+  .feedback.ko{ background:#FBF1EF; color:#973A2B; }
+  fieldset{ border:none; margin:0; padding:0; }
+
+  #resultBtn, .resetBtn{
+    background:var(--navy); color:#fff; border:none; padding:14px 30px; border-radius:100px;
+    font-family:'Work Sans',sans-serif; font-weight:600; font-size:15px; cursor:pointer;
+    transition:background .15s ease;
+  }
+  #resultBtn:hover, .resetBtn:hover{ background:var(--navy-soft); }
+  #resultBtn:disabled{ background:#C7CAD3; cursor:not-allowed; }
+
+  #resultCard{
+    display:none; margin-top:30px; background:var(--navy); color:#fff; border-radius:8px; padding:38px 34px; text-align:left;
+  }
+  #resultCard.show{ display:block; }
+  #resultCard .score{ font-family:'Fraunces',serif; font-size:56px; color:var(--gold); font-weight:700; margin:0 0 6px; }
+  #resultCard p{ margin:0 0 20px; color:#D7DCE8; font-size:15.5px; }
+
+  footer.site{ text-align:center; padding:50px 8vw 70px; color:var(--muted); font-size:13px; }
+</style>
+</head>
+<body>
+
+<div id="progress"></div>
+<header class="topbar">
+  <div class="brandmark"><span class="dot"></span> PEPCI <span id="chapterLabel"></span></div>
+  <button id="tocBtn" onclick="document.getElementById('toc').classList.add('open')">Sommaire</button>
+</header>
+
+<nav id="toc">
+  <button id="tocClose" onclick="document.getElementById('toc').classList.remove('open')">&times;</button>
+  <div class="tocInner">
+    <h2>SOMMAIRE</h2>
+    <ol>
+      <li><a href="#objectifs" onclick="closeToc()">Objectifs</a></li>
+      <li><a href="#fondamentaux" onclick="closeToc()">Les incontournables du public speaking</a></li>
+      <li><a href="#commission" onclick="closeToc()">Grande commission</a></li>
+      <li><a href="#vie-croyant" onclick="closeToc()">L'enseignement dans la vie d'un croyant</a></li>
+      <li><a href="#pepci-overview" onclick="closeToc()">Le modèle PEPCI</a></li>
+      <li><a href="#verset" onclick="closeToc()">Verset</a></li>
+      <li><a href="#quiz" onclick="closeToc()">Valider l'enseignement</a></li>
+    </ol>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section id="hero">
+  <div class="wrap">
+    <div class="marks">
+      <span>P</span><span>E</span><span>P</span><span>C</span><span>I</span>
+    </div>
+    <h1>PEPCI</h1>
+    <p class="lede">Un modèle d'enseignement pour Phila Cité d'Exaucement.</p>
+    <div class="meta">
+      <div><strong>Jonathan Imambo Ingoli</strong>Auteur de l'enseignement</div>
+      <div><strong>13 sections</strong>Cinq qualités du message, en détail</div>
+      <div><strong>12 questions</strong>Pour valider ce que tu as retenu</div>
+    </div>
+  </div>
+</section>
+
+<!-- OBJECTIFS -->
+<section id="objectifs">
+  <div class="wrap">
+    <p class="kicker">Introduction</p>
+    <h2 class="title">Objectifs</h2>
+    <hr class="rule">
+    <div class="row">
+      <div class="num">1</div>
+      <div class="txt"><p>Comprendre sa responsabilité dans l'exercice de son ministère.</p></div>
+    </div>
+    <div class="row">
+      <div class="num">2</div>
+      <div class="txt"><p>Montrer la place de l'enseignement dans la vie d'un croyant à Phila Cité d'Exaucement.</p></div>
+    </div>
+    <div class="row">
+      <div class="num">3</div>
+      <div class="txt"><p>Présenter le modèle d'enseignement à Phila Cité d'Exaucement.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FONDAMENTAUX -->
+<section id="fondamentaux">
+  <div class="wrap">
+    <p class="kicker">Fondamentaux</p>
+    <h2 class="title">Les incontournables du public speaking</h2>
+    <hr class="rule">
+    <div class="row">
+      <div class="num">1</div>
+      <div class="txt"><strong>La préparation</strong><p>Physique (repos, voix, posture), mentale (gérer le trac et les émotions), intellectuelle (recherche, structure du plan) et spirituelle (prière) : les quatre dimensions se préparent ensemble, pas seulement la dernière.</p></div>
+    </div>
+    <div class="row">
+      <div class="num">2</div>
+      <div class="txt"><strong>Des objectifs clairs</strong><p>Se fixer des objectifs clairs et précis avant de prendre la parole : une seule idée centrale par message, et une réponse attendue précise de la part de l'auditoire.</p></div>
+    </div>
+    <div class="row">
+      <div class="num">3</div>
+      <div class="txt"><strong>L'auditoire</strong><p>Identifier son auditoire pour adapter le message à ceux qui l'écoutent : âge, maturité spirituelle, culture, besoins réels — un même texte se prêche différemment selon qui écoute.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- GRANDE COMMISSION -->
+<section id="commission">
+  <div class="wrap wide">
+    <p class="kicker">Le mandat</p>
+    <h2 class="title">Grande commission</h2>
+    <hr class="rule">
+    <div class="cards2">
+      <div class="cardnavy" tabindex="0" role="button" aria-expanded="false" aria-controls="panel-transmettre"
+           onclick="toggleCard(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCard(this);}">
+        <div class="cardTop">
+          <p class="big">01</p>
+          <span class="toggleIcon">+</span>
+        </div>
+        <h3>Transmettre</h3>
+        <p>Enseigner, c'est transmettre des compétences.</p>
+        <div class="explainWrap">
+          <div class="cardExplain" id="panel-transmettre">
+            <h4>En profondeur</h4>
+            <p>Le mot grec traduit par « enseignez » dans la Grande Commission est <em>matheteuo</em> — faire des disciples. Ce n'est pas transmettre une information qu'on écoute, mais une compétence qu'on peut ensuite reproduire soi-même, comme un apprentissage artisanal : on montre, on explique, on laisse pratiquer, on corrige. Paul décrit ce même principe à Timothée : confier ce qui a été reçu à des personnes fiables, elles-mêmes capables de l'enseigner à d'autres — une chaîne de transmission sur plusieurs générations, pas un savoir qui s'arrête à celui qui l'a reçu.</p>
+            <h4>Concrètement</h4>
+            <ul>
+              <li>Ne pas seulement donner un enseignement : créer l'occasion de le mettre en pratique, sous supervision.</li>
+              <li>Accompagner dans la durée plutôt que de viser un seul enseignement ponctuel et isolé.</li>
+              <li>Se demander : « Cette personne pourrait-elle refaire ceci seule, après mon enseignement ? »</li>
+              <li>Former des gens capables, à leur tour, de transmettre à d'autres — pas seulement des auditeurs fidèles.</li>
+            </ul>
+            <div class="refs">
+              <span class="ref-pill" onclick="event.stopPropagation(); toggleVerse(this,'verse-transmettre','2tim22')">2 Timothée 2 : 2</span>
+              <span class="ref-pill" onclick="event.stopPropagation(); toggleVerse(this,'verse-transmettre','mat2819')">Matthieu 28 : 19-20</span>
+            </div>
+            <div class="verse-explain" id="verse-transmettre"></div>
+          </div>
+        </div>
+      </div>
+      <div class="cardnavy" tabindex="0" role="button" aria-expanded="false" aria-controls="panel-reperes"
+           onclick="toggleCard(this)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();toggleCard(this);}">
+        <div class="cardTop">
+          <p class="big">02</p>
+          <span class="toggleIcon">+</span>
+        </div>
+        <h3>Poser des repères</h3>
+        <p>Enseigner, c'est poser des enseignes.</p>
+        <div class="explainWrap">
+          <div class="cardExplain" id="panel-reperes">
+            <h4>En profondeur</h4>
+            <p>« Poser des enseignes », c'est planter des repères durables — comme des bornes le long d'un chemin, qui orientent même en l'absence de celui qui les a posées. Moïse demande à Israël d'inculquer les commandements à leurs enfants, d'en parler sans cesse, et même de les écrire sur les poteaux de leur maison : l'enseignement doit devenir un repère quotidien, pas un souvenir de sermon. C'est aussi le sens de « instruis l'enfant selon la voie qu'il doit suivre » — poser un cadre qui continuera à orienter les décisions bien après que l'enseignant ait quitté la pièce.</p>
+            <h4>Concrètement</h4>
+            <ul>
+              <li>Donner des principes clairs et mémorisables, pas seulement une impression ou une émotion du moment.</li>
+              <li>Répéter les repères essentiels sous des formes différentes pour qu'ils s'ancrent réellement.</li>
+              <li>Fournir un point d'appui concret — un verset clé, une phrase résumé — que la personne peut retrouver seule.</li>
+              <li>Vérifier que le repère posé aidera à une décision future, pas seulement à la compréhension immédiate.</li>
+            </ul>
+            <div class="refs">
+              <span class="ref-pill" onclick="event.stopPropagation(); toggleVerse(this,'verse-reperes','deut6')">Deutéronome 6 : 6-9</span>
+              <span class="ref-pill" onclick="event.stopPropagation(); toggleVerse(this,'verse-reperes','prov226')">Proverbes 22 : 6</span>
+            </div>
+            <div class="verse-explain" id="verse-reperes"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p style="max-width:640px; color:var(--muted); font-size:15px; margin:26px auto 0;">Le mot grec traduit par « enseignez » (<em>matheteuo</em>, faire des disciples) implique un accompagnement dans la durée, pas un simple transfert d'information. C'est aussi le sens de 2 Timothée 2:2 : transmettre à des personnes fiables, capables à leur tour d'instruire d'autres.</p>
+  </div>
+</section>
+
+<!-- VIE CROYANT -->
+<section id="vie-croyant">
+  <div class="wrap">
+    <p class="kicker">Fondement</p>
+    <h2 class="title">L'enseignement dans la vie d'un croyant</h2>
+    <hr class="rule">
+    <div class="pullquote"><span class="q">&ldquo;</span><p>L'enseignement a un caractère sacré.</p></div>
+    <div class="pullquote"><span class="q">&ldquo;</span><p>Dieu veut que son peuple soit instruit de son enseignement.</p></div>
+    <p style="max-width:640px; color:var(--muted); font-size:15px; margin-top:10px;">Dès l'Église naissante, les croyants étaient assidus à l'enseignement des apôtres (Actes 2:42). À l'inverse, Osée rappelle qu'un peuple périt par manque de connaissance (Osée 4:6) — l'enseignement n'est donc pas une option annexe de la vie chrétienne.</p>
+    <p class="refline">Actes 2 : 42 · Osée 4 : 6</p>
+  </div>
+</section>
+
+<!-- PEPCI OVERVIEW -->
+<section id="pepci-overview">
+  <div class="wrap wide">
+    <p class="kicker">PEPCI</p>
+    <h2 class="title">Cinq qualités du message à Phila Cité d'Exaucement</h2>
+    <div class="letterGrid">
+      <a class="letterCard" href="#prophetique"><span class="circ">P</span><span>Prophétique</span></a>
+      <a class="letterCard" href="#explicatif"><span class="circ">E</span><span>Explicatif</span></a>
+      <a class="letterCard" href="#pratique"><span class="circ">P</span><span>Pratique</span></a>
+      <a class="letterCard" href="#christocentrique"><span class="circ">C</span><span>Christocentrique</span></a>
+      <a class="letterCard" href="#illustratif"><span class="circ">I</span><span>Illustratif</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- DETAIL SECTIONS -->
+<section id="prophetique" data-chapter="Prophétique">
+  <div class="wrap wide">
+    <p class="kicker">PEPCI · Le message est…</p>
+    <div class="detail">
+      <div class="medallion"><div class="circ">P</div><strong>Prophétique</strong></div>
+      <div class="body">
+        <p>Chaque message doit naître d'un cœur d'intercesseur, avec une motivation prophétique ; il doit être longuement imbibé de prière et de jeûne. Dieu ne fait rien sans avoir révélé son secret à ses serviteurs : le prédicateur commence donc par écouter avant de parler.</p>
+        <p class="emph">Il s'agit de montrer le cœur de Dieu pour son peuple : il ne faut pas enseigner la connaissance, mais la parole de connaissance — la révélation.</p>
+        <div class="tips">
+          <h4>Concrètement</h4>
+          <ul>
+            <li>Réserver un temps de prière et de jeûne dédié à la préparation, distinct du temps de recherche.</li>
+            <li>Avant d'ouvrir les commentaires, demander : « Seigneur, que veux-tu dire à ton peuple aujourd'hui ? »</li>
+            <li>Tenir un carnet où noter ce qui est reçu en prière, pour le laisser mûrir avant de le livrer.</li>
+            <li>Se demander si le message pousse l'auditoire vers Dieu, ou vers l'admiration de l'orateur.</li>
+          </ul>
+        </div>
+        <div class="refs">
+          <span class="ref-pill" onclick="toggleVerse(this,'verse-prophetique','amos37')">Amos 3 : 7</span>
+          <span class="ref-pill" onclick="toggleVerse(this,'verse-prophetique','1co128')">1 Corinthiens 12 : 8</span>
+          <span class="ref-pill" onclick="toggleVerse(this,'verse-prophetique','1co143')">1 Corinthiens 14 : 3</span>
+        </div>
+        <div class="verse-explain" id="verse-prophetique"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="explicatif" data-chapter="Explicatif">
+  <div class="wrap wide">
+    <p class="kicker">PEPCI · Le message est…</p>
+    <div class="detail">
+      <div class="medallion"><div class="circ">E</div><strong>Explicatif</strong></div>
+      <div class="body">
+        <p>Le message vise la compréhension et la maturité de l'auditoire, c'est-à-dire le rendre adulte, plutôt que de le dogmatiser par des affirmations humaines ou religieuses. Le but n'est pas de faire briller l'orateur, mais de rendre l'auditeur capable de comprendre le texte par lui-même.</p>
+        <p class="emph">Il faut expliquer la Parole de Dieu.</p>
+        <div class="tips">
+          <h4>Concrètement</h4>
+          <ul>
+            <li>Situer le texte : à qui s'adresse-t-il, dans quel contexte, avant d'en tirer une application.</li>
+            <li>Définir les mots techniques ou théologiques plutôt que de les supposer connus.</li>
+            <li>Poser des questions qui font réfléchir l'auditoire, plutôt que d'enchaîner les affirmations.</li>
+            <li>Se relire en se demandant : « Un nouveau converti comprendrait-il cette phrase ? »</li>
+          </ul>
+        </div>
+        <div class="refs">
+          <span class="ref-pill" onclick="toggleVerse(this,'verse-explicatif','2tim215')">2 Timothée 2 : 15</span>
+          <span class="ref-pill" onclick="toggleVerse(this,'verse-explicatif','eph411')">Éphésiens 4 : 11-14</span>
+          <span class="ref-pill" onclick="toggleVerse(this,'verse-explicatif','neh88')">Néhémie 8 : 8</span>
+        </div>
+        <div class="verse-explain" id="verse-explicatif"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="pratique" data-chapter="Pratique">
+  <div class="wrap wide">
+    <p class="kicker">PEPCI · Le message est…</p>
+    <div class="detail">
+      <div class="medallion"><div class="circ">P</div><strong>Pratique</strong></div>
+      <div class="body">
+        <p>L'exposition du message ne doit pas rester théorique ni figée dans le passé ; elle doit rejoindre le contexte culturel de l'auditoire, de la manière la plus concrète possible. Un enseignement qui ne débouche sur rien de concret s'oublie avant la sortie de la salle.</p>
+        <p class="emph">Le message doit répondre à la question : « Hommes frères, que ferons-nous ? »</p>
+        <div class="tips">
+          <h4>Concrètement</h4>
+          <ul>
+            <li>Terminer chaque point par une application précise, réalisable dans la semaine.</li>
+            <li>Puiser les exemples dans le quotidien réel de l'auditoire : travail, famille, études, quartier.</li>
+            <li>Proposer un petit engagement concret à la fin du message, pas seulement une bonne intention.</li>
+            <li>Anticiper l'objection « oui mais dans ma situation, comment je fais ? »</li>
+          </ul>
+        </div>
+        <div class="refs">
+          <span class="ref-pill" onclick="toggleVerse(this,'verse-pratique','actes237')">Actes 2 : 37</span>
+          <span class="ref-pill" onclick="toggleVerse(this,'verse-pratique','jac122')">Jacques 1 : 22</span>
+        </div>
+        <div class="verse-explain" id="verse-pratique"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="christocentrique" data-chapter="Christocentrique">
+  <div class="wrap wide">
+    <p class="kicker">PEPCI · Le message est…</p>
+    <div class="detail">
+      <div class="medallion"><div class="circ">C</div><strong>Christocentrique</strong></div>
+      <div class="body">
+        <p>Le message doit ramener les cœurs à la personne de Christ, point central et pont de connexion pour découvrir le Père et être baptisé du Saint-Esprit. Même un texte de l'Ancien Testament doit être relié à ce qu'il annonce ou accomplit en Christ.</p>
+        <p class="emph">Tout est centré sur Jésus.</p>
+        <div class="tips">
+          <h4>Concrètement</h4>
+          <ul>
+            <li>Se demander, pour tout texte étudié : « Comment ce passage pointe-t-il vers Christ ? »</li>
+            <li>Éviter les messages purement moralisateurs, sans mention de la croix ni de la grâce.</li>
+            <li>Conclure par un pont explicite vers le Père et le Saint-Esprit, pas seulement vers une leçon de vie.</li>
+          </ul>
+        </div>
+        <div class="refs">
+          <span class="ref-pill" onclick="toggleVerse(this,'verse-christo','luc2427')">Luc 24 : 27</span>
+          <span class="ref-pill" onclick="toggleVerse(this,'verse-christo','jean539')">Jean 5 : 39</span>
+          <span class="ref-pill" onclick="toggleVerse(this,'verse-christo','col118')">Colossiens 1 : 18</span>
+        </div>
+        <div class="verse-explain" id="verse-christo"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="illustratif" data-chapter="Illustratif">
+  <div class="wrap wide">
+    <p class="kicker">PEPCI · Le message est…</p>
+    <div class="detail">
+      <div class="medallion"><div class="circ">I</div><strong>Illustratif</strong></div>
+      <div class="body">
+        <p>À l'aide de supports didactiques, audio, vidéo et d'illustrations dynamiques, le message se grave dans la mémoire — comme les paraboles du Christ, qui parlait toujours d'un semeur, d'un berger ou d'une lampe plutôt que de concepts abstraits.</p>
+        <p class="emph">Il faut créer des images dans l'esprit de l'auditoire.</p>
+        <div class="tips">
+          <h4>Concrètement</h4>
+          <ul>
+            <li>Préparer une à deux illustrations concrètes pour chaque point majeur du message.</li>
+            <li>Puiser les images dans le vécu réel de l'auditoire plutôt que dans des références lointaines.</li>
+            <li>Utiliser un support visuel ou audio quand c'est possible, sans qu'il devienne le centre d'attention.</li>
+            <li>Vérifier qu'une illustration clarifie l'idée — et ne la brouille pas davantage.</li>
+          </ul>
+        </div>
+        <div class="refs">
+          <span class="ref-pill" onclick="toggleVerse(this,'verse-illustratif','mat13')">Matthieu 13 : 3-9</span>
+          <span class="ref-pill" onclick="toggleVerse(this,'verse-illustratif','marc433')">Marc 4 : 33-34</span>
+        </div>
+        <div class="verse-explain" id="verse-illustratif"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- VERSET -->
+<section id="verset">
+  <div class="wrap">
+    <span class="q">&ldquo;</span>
+    <p class="v">Ne néglige pas le don qui est en toi&hellip;</p>
+    <p class="ref">1 Timothée 4 : 14</p>
+  </div>
+</section>
+
+<!-- QUIZ -->
+<section id="quiz">
+  <div class="wrap wide">
+    <p class="kicker">Pour conclure</p>
+    <h2 class="title">Valide l'enseignement</h2>
+    <hr class="rule">
+    <p style="color:var(--muted); font-size:15.5px; margin-top:-18px; margin-bottom:36px;">Réponds aux 12 questions ci-dessous. Une explication s'affiche après chaque réponse.</p>
+
+    <form id="quizForm"></form>
+
+    <div style="margin-top:10px; display:flex; align-items:center; gap:18px;">
+      <button id="resultBtn" onclick="showResult()" disabled>Voir mon résultat</button>
+      <span id="progressHint" style="font-size:13.5px; color:var(--muted);"></span>
+    </div>
+
+    <div id="resultCard">
+      <p class="score" id="scoreText"></p>
+      <p id="scoreMsg"></p>
+      <button class="resetBtn" onclick="resetQuiz()">Recommencer</button>
+    </div>
+  </div>
+</section>
+
+<footer class="site">PEPCI — Phila Cité d'Exaucement</footer>
+
+<script>
+  // ---- progress bar + running chapter label ----
+  const progress = document.getElementById('progress');
+  const chapterLabel = document.getElementById('chapterLabel');
+  const chapterSections = document.querySelectorAll('section[data-chapter], #objectifs, #fondamentaux, #commission, #vie-croyant, #pepci-overview, #verset, #quiz');
+
+  function onScroll(){
+    const h = document.documentElement;
+    const pct = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
+    progress.style.width = pct + '%';
+
+    let current = '';
+    chapterSections.forEach(sec => {
+      const r = sec.getBoundingClientRect();
+      if(r.top < 120) current = sec.dataset.chapter || '';
+    });
+    chapterLabel.textContent = current ? ('— ' + current) : '';
+  }
+  document.addEventListener('scroll', onScroll);
+  onScroll();
+
+  function closeToc(){ document.getElementById('toc').classList.remove('open'); }
+  document.getElementById('toc').addEventListener('click', (e)=>{ if(e.target.id==='toc') closeToc(); });
+
+  // ---- commission cards (accordion) ----
+  function toggleCard(el){
+    const nowOpen = el.classList.toggle('open');
+    el.setAttribute('aria-expanded', nowOpen ? 'true' : 'false');
+  }
+
+  // ---- scripture reference explanations ----
+  const VERSES = {
+    // Grande commission
+    '2tim22': { ref: "2 Timothée 2 : 2", text: "« Et ce que tu as entendu de moi en présence de beaucoup de témoins, confie-le à des hommes fidèles, qui soient capables de l'enseigner aussi à d'autres. » <b>Contexte :</b> Paul, en fin de vie, transmet la responsabilité à Timothée. <b>Application :</b> une chaîne de transmission sur quatre générations — Paul, Timothée, des hommes fidèles, puis d'autres encore : la compétence enseignée doit voyager plus loin que celui qui l'a reçue." },
+    'mat2819': { ref: "Matthieu 28 : 19-20", text: "« Allez, faites de toutes les nations des disciples… et enseignez-leur à observer tout ce que je vous ai prescrit. » <b>Contexte :</b> dernières paroles de Jésus avant son ascension, le mandat confié à l'Église. <b>Application :</b> le verbe central est « faire des disciples », pas « informer » — l'enseignement vise une transformation durable, pas une simple écoute." },
+    'deut6': { ref: "Deutéronome 6 : 6-9", text: "« Tu les inculqueras à tes enfants, tu en parleras… tu les écriras sur les poteaux de ta maison. » <b>Contexte :</b> Moïse rappelle à Israël comment garder vivante la Loi reçue au Sinaï. <b>Application :</b> un repère enseigné doit infuser le quotidien, pas rester confiné à un moment d'écoute ponctuel." },
+    'prov226': { ref: "Proverbes 22 : 6", text: "« Instruis l'enfant selon la voie qu'il doit suivre ; et quand il sera vieux, il ne s'en détournera pas. » <b>Contexte :</b> sagesse proverbiale sur l'éducation durable. <b>Application :</b> un bon repère continue d'orienter les décisions longtemps après l'enseignement lui-même." },
+
+    // Prophétique
+    'amos37': { ref: "Amos 3 : 7", text: "« Car le Seigneur, l'Éternel, ne fait rien sans avoir révélé son secret à ses serviteurs les prophètes. » <b>Contexte :</b> Amos annonce un jugement à venir sur Israël. <b>Application :</b> Dieu prévient toujours son peuple par ceux qu'il a établis pour parler en son nom — le prédicateur cherche cette révélation avant de monter en chaire." },
+    '1co128': { ref: "1 Corinthiens 12 : 8", text: "« À l'un est donnée par l'Esprit une parole de sagesse ; à un autre une parole de connaissance, selon le même Esprit. » <b>Contexte :</b> Paul énumère les dons donnés à l'Église pour l'édification commune. <b>Application :</b> la « parole de connaissance » est une révélation ponctuelle du Saint-Esprit, distincte du savoir acquis par l'étude seule." },
+    '1co143': { ref: "1 Corinthiens 14 : 3", text: "« Celui qui prophétise parle aux hommes, les édifie, les exhorte, les console. » <b>Contexte :</b> Paul distingue la prophétie du parler en langues : elle est intelligible et construit l'assemblée. <b>Application :</b> un message prophétique a un objectif précis — édifier, exhorter, consoler — pas impressionner." },
+
+    // Explicatif
+    '2tim215': { ref: "2 Timothée 2 : 15", text: "« Efforce-toi de te présenter devant Dieu comme un homme éprouvé… qui dispense droitement la parole de la vérité. » <b>Contexte :</b> Paul met Timothée en garde contre les fausses doctrines qui circulaient déjà. <b>Application :</b> expliquer la Parole exige rigueur et honnêteté envers le texte, jamais une lecture qui arrange l'auditoire." },
+    'eph411': { ref: "Éphésiens 4 : 11-14", text: "« Il a donné les uns comme apôtres… en vue du perfectionnement des saints… jusqu'à l'état d'homme fait. » <b>Contexte :</b> Paul décrit le but des dons ministériels donnés à l'Église. <b>Application :</b> l'enseignement vise la maturité de l'auditoire, pas sa dépendance perpétuelle envers l'enseignant." },
+    'neh88': { ref: "Néhémie 8 : 8", text: "« Ils lisaient distinctement… et donnaient le sens pour faire comprendre ce qu'ils avaient lu. » <b>Contexte :</b> après l'exil, les lévites lisent la Loi au peuple rassemblé. <b>Application :</b> c'est le modèle biblique de l'enseignement explicatif — lire, puis rendre intelligible." },
+
+    // Pratique
+    'actes237': { ref: "Actes 2 : 37", text: "« Hommes frères, que ferons-nous ? » <b>Contexte :</b> réaction de la foule après la prédication de Pierre à la Pentecôte. <b>Application :</b> un message qui convainc débouche sur une question concrète — un bon enseignement vise cette même réponse." },
+    'jac122': { ref: "Jacques 1 : 22", text: "« Mettez en pratique la parole, et ne vous bornez pas à l'écouter, en vous trompant vous-mêmes. » <b>Contexte :</b> Jacques met en garde contre une foi purement intellectuelle. <b>Application :</b> l'enseignant vise la mise en pratique, pas seulement la compréhension." },
+
+    // Christocentrique
+    'luc2427': { ref: "Luc 24 : 27", text: "« Il leur expliqua dans toutes les Écritures ce qui le concernait. » <b>Contexte :</b> sur le chemin d'Emmaüs, Jésus ressuscité montre à deux disciples comment tout l'Ancien Testament annonçait sa venue. <b>Application :</b> c'est le modèle même de la lecture christocentrique, donné par Jésus lui-même." },
+    'jean539': { ref: "Jean 5 : 39", text: "« Ce sont elles [les Écritures] qui rendent témoignage de moi. » <b>Contexte :</b> Jésus reproche aux chefs religieux de connaître les Écritures sans y reconnaître sa personne. <b>Application :</b> étudier la Bible sans y voir Christ manque l'essentiel de son message." },
+    'col118': { ref: "Colossiens 1 : 18", text: "« Il est la tête du corps… afin d'être en tout le premier. » <b>Contexte :</b> hymne christologique où Paul affirme la primauté absolue de Christ. <b>Application :</b> tout enseignement doit refléter cette primauté — Christ au centre, jamais en périphérie." },
+
+    // Illustratif
+    'mat13': { ref: "Matthieu 13 : 3-9", text: "La parabole du semeur : un semeur, différents types de sols, pour illustrer comment la Parole est reçue selon l'état du cœur. <b>Application :</b> une image tirée du quotidien peut expliquer une vérité complexe mieux qu'un long discours abstrait." },
+    'marc433': { ref: "Marc 4 : 33-34", text: "« Il ne leur parlait point sans parabole ; mais en particulier, il expliquait tout à ses disciples. » <b>Contexte :</b> résumé de la méthode habituelle de Jésus. <b>Application :</b> l'image accroche l'auditoire large, l'explication approfondie nourrit ceux qui veulent aller plus loin." }
+  };
+
+  function toggleVerse(btn, containerId, key){
+    const container = document.getElementById(containerId);
+    const wasActiveKey = container.dataset.activeKey;
+    const siblings = btn.parentElement.querySelectorAll('.ref-pill');
+
+    if(wasActiveKey === key){
+      // same pill clicked again -> close
+      container.classList.remove('open');
+      container.dataset.activeKey = '';
+      siblings.forEach(p => p.classList.remove('active'));
+      return;
+    }
+
+    const v = VERSES[key];
+    if(!v) return;
+    container.innerHTML = `<div class="inner"><p class="vref">${v.ref}</p><p class="vtext">${v.text}</p></div>`;
+    container.classList.add('open');
+    container.dataset.activeKey = key;
+    siblings.forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+  }
+
+  // ---- quiz ----
+  const QUESTIONS = [
+    {
+      q: "Quel est l'un des objectifs de cet enseignement ?",
+      options: [
+        "Comprendre sa responsabilité dans l'exercice de son ministère",
+        "Apprendre à improviser sans préparation",
+        "Mémoriser des techniques de communication marketing"
+      ],
+      correct: 0,
+      explain: "L'un des trois objectifs est de comprendre sa responsabilité dans l'exercice de son ministère."
+    },
+    {
+      q: "Parmi les incontournables du public speaking, que recouvre « la préparation » ?",
+      options: [
+        "Uniquement la préparation financière de l'événement",
+        "Le physique, le mental, l'intellectuel et le spirituel",
+        "Le choix de la tenue vestimentaire"
+      ],
+      correct: 1,
+      explain: "La préparation est physique, mentale (émotions, sentiments…), intellectuelle (recherche) et spirituelle."
+    },
+    {
+      q: "Selon la Grande Commission, enseigner c'est…",
+      options: [
+        "Réciter des versets par cœur devant l'auditoire",
+        "Transmettre des compétences et poser des repères",
+        "Impressionner par son éloquence"
+      ],
+      correct: 1,
+      explain: "Enseigner, c'est transmettre des compétences et poser des enseignes (des repères)."
+    },
+    {
+      q: "Que signifie le « P » de Prophétique dans PEPCI ?",
+      options: [
+        "Le message naît d'un cœur d'intercesseur, nourri de prière et de jeûne",
+        "Le message doit prédire l'avenir",
+        "Le message doit rester improvisé pour paraître spontané"
+      ],
+      correct: 0,
+      explain: "Chaque message doit être longuement imbibé de prière et de jeûne, et viser la révélation plutôt que la simple connaissance."
+    },
+    {
+      q: "Que signifie le « E » d'Explicatif ?",
+      options: [
+        "Utiliser un vocabulaire savant pour démontrer sa connaissance",
+        "Rendre l'auditoire adulte en expliquant la Parole de Dieu",
+        "Éviter toute explication pour laisser chacun interpréter"
+      ],
+      correct: 1,
+      explain: "Le message vise la compréhension et la maturité de l'auditoire : il faut expliquer la Parole de Dieu."
+    },
+    {
+      q: "Que signifie le « P » de Pratique ?",
+      options: [
+        "Rester théorique pour garder une portée universelle",
+        "Répondre concrètement à « Hommes frères, que ferons-nous ? »",
+        "Se limiter à des exemples historiques anciens"
+      ],
+      correct: 1,
+      explain: "Le message doit rejoindre le contexte culturel de l'auditoire, de la manière la plus concrète possible."
+    },
+    {
+      q: "Que signifie le « C » de Christocentrique ?",
+      options: [
+        "Le message ramène les cœurs à la personne de Christ",
+        "Le message doit surtout parler de l'orateur",
+        "Le message évite de mentionner Jésus pour rester neutre"
+      ],
+      correct: 0,
+      explain: "Christ est le point central et le pont de connexion pour découvrir le Père et être baptisé du Saint-Esprit."
+    },
+    {
+      q: "Que signifie le « I » d'Illustratif ?",
+      options: [
+        "Le message doit rester uniquement écrit, sans support",
+        "Des supports et illustrations dynamiques gravent le message dans la mémoire",
+        "Illustrer veut dire citer des célébrités"
+      ],
+      correct: 1,
+      explain: "À l'aide de supports didactiques, audio, vidéo et d'illustrations, le message se grave dans la mémoire — comme les paraboles du Christ."
+    },
+    {
+      q: "Quel verset conclut cet enseignement ?",
+      options: [
+        "2 Timothée 1:6",
+        "1 Timothée 4:14",
+        "Jean 3:16"
+      ],
+      correct: 1,
+      explain: "« Ne néglige pas le don qui est en toi… » — 1 Timothée 4:14."
+    },
+    {
+      q: "Dans la Grande Commission, le mot traduit par « enseignez » (matheteuo) implique surtout…",
+      options: [
+        "Un simple transfert d'informations",
+        "Un accompagnement dans la durée, pour former des disciples",
+        "Une évaluation écrite après chaque message"
+      ],
+      correct: 1,
+      explain: "Matheteuo signifie « faire des disciples » : un accompagnement dans le temps, pas seulement transmettre de l'information — cf. aussi 2 Timothée 2:2."
+    },
+    {
+      q: "Quel verset rappelle qu'un peuple peut périr par manque de connaissance ?",
+      options: [
+        "Osée 4:6",
+        "Actes 2:42",
+        "Marc 4:33"
+      ],
+      correct: 0,
+      explain: "Osée 4:6 souligne que l'enseignement n'est pas une option annexe de la vie chrétienne, mais une question de vie ou de mort spirituelle."
+    },
+    {
+      q: "Pourquoi Jésus enseignait-il souvent par paraboles (semeur, berger, lampe…) ?",
+      options: [
+        "Pour compliquer volontairement le message",
+        "Pour ancrer l'enseignement dans des images concrètes et mémorables",
+        "Parce qu'il manquait d'arguments théologiques"
+      ],
+      correct: 1,
+      explain: "Les images tirées du quotidien gravent le message dans la mémoire — c'est tout le principe de la qualité « Illustratif »."
+    }
+  ];
+
+  const form = document.getElementById('quizForm');
+  const answers = new Array(QUESTIONS.length).fill(null);
+
+  QUESTIONS.forEach((item, qi) => {
+    const card = document.createElement('div');
+    card.className = 'qcard';
+
+    const head = document.createElement('div');
+    head.className = 'qhead';
+    head.innerHTML = `<span class="qnum">${String(qi+1).padStart(2,'0')}</span><span class="qtext">${item.q}</span>`;
+    card.appendChild(head);
+
+    const fs = document.createElement('fieldset');
+    item.options.forEach((opt, oi) => {
+      const label = document.createElement('label');
+      label.className = 'opt';
+      label.innerHTML = `<input type="radio" name="q${qi}" value="${oi}"> <span>${opt}</span>`;
+      label.addEventListener('click', () => selectAnswer(qi, oi, card));
+      fs.appendChild(label);
+    });
+    card.appendChild(fs);
+
+    const fb = document.createElement('div');
+    fb.className = 'feedback';
+    fb.id = `fb${qi}`;
+    card.appendChild(fb);
+
+    form.appendChild(card);
+  });
+
+  updateProgress();
+
+  function selectAnswer(qi, oi, card){
+    answers[qi] = oi;
+    const opts = card.querySelectorAll('.opt');
+    opts.forEach((o, idx) => {
+      o.classList.remove('correct','wrong');
+      if(idx === QUESTIONS[qi].correct) o.classList.add('correct');
+      else if(idx === oi) o.classList.add('wrong');
+    });
+    const fb = card.querySelector('.feedback');
+    fb.classList.add('show');
+    if(oi === QUESTIONS[qi].correct){
+      fb.classList.remove('ko'); fb.classList.add('ok');
+      fb.textContent = '✓ Exact — ' + QUESTIONS[qi].explain;
+    } else {
+      fb.classList.remove('ok'); fb.classList.add('ko');
+      fb.textContent = '✗ Pas tout à fait — ' + QUESTIONS[qi].explain;
+    }
+    updateProgress();
+  }
+
+  function updateProgress(){
+    const answered = answers.filter(a => a !== null).length;
+    document.getElementById('progressHint').textContent = `${answered} / ${QUESTIONS.length} répondues`;
+    document.getElementById('resultBtn').disabled = answered < QUESTIONS.length;
+  }
+
+  function showResult(){
+    const score = answers.reduce((acc, a, i) => acc + (a === QUESTIONS[i].correct ? 1 : 0), 0);
+    const pct = Math.round(score / QUESTIONS.length * 100);
+    let msg;
+    if(pct >= 80) msg = "Le modèle PEPCI est bien assimilé — belle maîtrise de l'enseignement.";
+    else if(pct >= 50) msg = "Une bonne base est posée. Une relecture des sections manquées consolidera le tout.";
+    else msg = "Un second passage sur les sections du modèle PEPCI aidera à mieux ancrer l'enseignement.";
+
+    document.getElementById('scoreText').textContent = `${score} / ${QUESTIONS.length}`;
+    document.getElementById('scoreMsg').textContent = msg;
+    const rc = document.getElementById('resultCard');
+    rc.classList.add('show');
+    rc.scrollIntoView({behavior:'smooth', block:'center'});
+  }
+
+  function resetQuiz(){
+    answers.fill(null);
+    document.querySelectorAll('.opt').forEach(o => o.classList.remove('correct','wrong'));
+    document.querySelectorAll('input[type=radio]').forEach(i => i.checked = false);
+    document.querySelectorAll('.feedback').forEach(f => f.classList.remove('show'));
+    document.getElementById('resultCard').classList.remove('show');
+    updateProgress();
+    document.getElementById('quiz').scrollIntoView({behavior:'smooth'});
+  }
+</script>
+</body>
+</html>
